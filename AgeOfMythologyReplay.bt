@@ -1,0 +1,677 @@
+//------------------------------------------------
+//--- 010 Editor v2.0 Binary Template
+//
+//      File: AgeOfMythologyReplay.bt
+//    Author: Nobody
+//   Version: 1.1
+//   Purpose: Parse Age of Mythology Retold replay files.
+//  Category: Game
+// File Mask: *.mythrec.unpacked
+//  ID Bytes: 06 00 00 00 52 47 //....RG
+//   History:
+//   1.0   2025-07-24  Initial release based on restoration parser
+//
+// This template parses Age of Mythology Retold replay data.
+// NOTE: The replay must have its l33t compression removed inplace first.
+//------------------------------------------------
+
+LittleEndian();
+
+const int DATA_OFFSET = 6;
+const string ROOT_NODE_TOKEN = "BG";
+
+local int COLOR_HEADER = cLtGray;
+local int COLOR_PROFILE_KEYS = cLtBlue;
+local int COLOR_XMB = cLtGreen;
+local int COLOR_COMMANDS = cLtYellow;
+local int COLOR_BUILD_INFO = cDkPurple;
+local int COLOR_XMB_MAP = cDkRed;
+local int COLOR_NODES = cLtRed;
+
+typedef struct {
+    ushort numChars;
+    ushort padding;
+    if (numChars > 0) {
+        ushort chars[numChars] <format=hex>;
+    }
+} UTF16String <read=ReadUTF16String>;
+
+string ReadUTF16String(UTF16String &str) {
+    local string result = "";
+    local int i;
+    if (str.numChars > 0) {
+        for (i = 0; i < str.numChars; i++) {
+            result += (char)(str.chars[i] & 0xFF);
+        }
+    }
+    return result;
+}
+
+typedef struct {
+    int32 x;
+    int32 y;
+    int32 z;
+} Vector3;
+
+// ==============================================================================================================================
+// XMB
+// ==============================================================================================================================
+
+struct XMBNode;
+
+typedef struct {
+    uint32 attributeNameIdx;
+    UTF16String attributeValue;
+} XMBAttribute<read=ReadUTF16String(this.attributeValue)>;
+
+typedef struct {
+    local int nodeStart = FTell();
+    
+    char xn[2];
+    if (xn != "XN") {
+        Printf("Invalid XN marker at offset %d: %s\n", startof(xn), xn);
+        Exit(1); 
+    }
+    
+    uchar unknown1[4];
+    
+    UTF16String value;
+    
+    uint32 nameIdx;
+    uchar unknown2[4];
+    
+    uint32 numAttributes;
+    if (numAttributes > 0) {
+        XMBAttribute attribute[numAttributes] <optimize=false>;
+    }
+    
+    uint32 numChildren;
+    if (numChildren > 0) {
+        XMBNode childNode[numChildren] <optimize=false>;
+    }
+
+} XMBNode<read=ReadUTF16String(this.value)>;
+
+typedef struct {
+    char x1[2];
+    if (x1 != "X1") {
+        Printf("Invalid X1 marker at offset %d: %s\n", startof(x1), x1);
+        Exit(1);
+    }
+    uchar padding1[4];
+    char xr[2];
+    if (xr != "XR") {
+        Printf("Invalid XR marker at offset %d: %s\n", startof(xr), xr);
+        Exit(1);
+    }
+    uint32 unk1;
+    if (unk1 != 4) {
+        Printf("Invalid unk1 marker at offset %d: %d\n", startof(unk1), unk1);
+        Exit(1);
+    }
+    uint32 version;
+    if (version != 8) {
+        Printf("Invalid version marker at offset %d: %d\n", startof(version), version);
+        Exit(1);
+    }
+
+    uint32 numElements;
+    if (numElements > 0) {
+        UTF16String element[numElements] <optimize=false>;
+    }
+    
+    uint32 numAttributes;
+    if (numAttributes > 0) {
+        UTF16String attribute[numAttributes]  <optimize=false>;
+    }
+
+    XMBNode rootNode;
+
+} XMBFile; //<size=(parentof(this).dataLength)>;
+
+typedef struct {
+    UTF16String str1;
+    UTF16String xmbName;
+    XMBFile xmbFile <bgcolor=COLOR_XMB>;
+} XmbMapFile;
+
+typedef struct (int dataEnd) {
+    uchar unknown;
+    uint32 numFiles;
+    if (numFiles == 1) {
+        XMBFile xmbFile <bgcolor=COLOR_XMB>;
+    } else if (numFiles > 1) {
+        XmbMapFile file[numFiles] <optimize=false>;
+    }
+} XmbMap;
+
+// ==============================================================================================================================
+// ProfileKey
+// ==============================================================================================================================
+
+enum <int32> ProfileKeyType {
+    PROFILE_INT32 = 1,
+    PROFILE_INT32_2 = 2,
+    PROFILE_GAMESYNCSTATE = 3,
+    PROFILE_INT16 = 4,
+    PROFILE_BOOL = 6,
+    PROFILE_STRING = 10
+};
+
+typedef struct {
+    UTF16String keyName;
+    ProfileKeyType keyType;
+    switch (keyType) {
+        case PROFILE_INT32:
+        case PROFILE_INT32_2:
+            int32 int32Value;
+            break;
+        case PROFILE_GAMESYNCSTATE:
+            uchar gameSyncState[8];
+            break;
+        case PROFILE_INT16:
+            int16 int16Value;
+            break;
+        case PROFILE_BOOL:
+            uchar boolValue;
+            break;
+        case PROFILE_STRING:
+            UTF16String stringValue;
+            break;
+        default:
+            Printf("Unknown profile key type at offset %d: %d\n", startof(keyType), keyType);
+            break;
+    }
+} ProfileKey <read=ReadUTF16String(this.keyName)>;
+
+typedef struct {
+    uint32 unknown;
+    uint32 numKeys;
+    ProfileKey profileKey[numKeys] <optimize=false>;
+} ProfileKeys;
+
+
+// ==============================================================================================================================
+// BuildInfo
+// ==============================================================================================================================
+
+typedef struct {
+    uint32 unknown;
+    UTF16String build;
+} BuildInfo;
+
+// ==============================================================================================================================
+// Node
+// ==============================================================================================================================
+
+struct Node;
+
+string getNodePath(Node &node) {
+    return _getNodePath(node, "");
+}
+
+string _getNodePath(Node &node, string path) {
+    if (path == "") {
+        path = node.token;
+    } else {
+        path = node.token + "/" + path;
+    }
+    if (exists(parentof(node))) {
+        return _getNodePath(parentof(node), path);
+    } else {
+        return path;
+    }
+}
+
+void commitPadding(int i) {
+    local int space = i - FTell();
+    if (space > 0) {
+        // make sure we don't miss any XMBs with our current assumption that they exist only in one node
+        local int xmbMatch = FindFirst("58 31 ?? ?? ?? ?? 58 52 04 00 00 00 08 00 00 00,h", 
+                                true, false, FINDMETHOD_WILDCARDS, 0.0, 1, FTell(), space);
+        if (xmbMatch != -1) {
+            Printf("Found unexpected XMB at offset %d\n", xmbMatch);
+            Exit(1);
+        }
+        struct (int space) {
+            byte data[space];
+        } data(space);
+    }
+}
+
+typedef struct {
+    char token[2];
+    uint32 dataLength;
+    if (dataLength > 0) {
+        local uint32 dataStart = FTell();
+        local uint32 dataEnd = dataStart + dataLength;
+        local int i = dataStart;
+        switch (getNodePath(this)) {
+            case "BG/MP/ST":
+                ProfileKeys profileKeys <bgcolor=COLOR_PROFILE_KEYS>;
+                i = dataEnd;
+                break;
+            case "BG/FH":
+                BuildInfo buildInfo <bgcolor=COLOR_BUILD_INFO>;
+                i = dataEnd;
+                break;
+            case "BG/GM/GD/gd":
+                XmbMap xmbMap(dataEnd) <bgcolor=COLOR_XMB_MAP>;
+                i = dataEnd;
+                break;
+            default:
+                // use heuristics to detect child nodes without knowing their structure
+                // TODO: only recurse known containers? BG, J1, PL, BP, MP, GM, GD
+                local int nodeMatch = -1;
+                while (i < dataEnd) {
+                    nodeMatch = FindFirst("[A-Za-z0-9]{2}", true, false, FINDMETHOD_REGEX, 0.0, 1, i, dataEnd-i);
+                    if (nodeMatch != -1 && nodeMatch + ReadUInt(nodeMatch+2) <= dataEnd) {
+                        commitPadding(nodeMatch);
+                        Node node<bgcolor=COLOR_NODES>;
+                        i = FTell();
+                    } else {
+                        i = dataEnd;
+                    }
+                }
+        }
+        commitPadding(i);
+    }
+} Node <read=(this.token)>; // size=(6 + ReadUInt(startof(this) + 2))
+
+// ==============================================================================================================================
+// Game Commands
+// ==============================================================================================================================
+
+enum <uchar> GameCommandType {
+    CMD_TASK = 0,
+    CMD_RESEARCH = 1,
+    CMD_TRAIN = 2,
+    CMD_BUILD = 3,
+    CMD_SET_GATHER_POINT = 4,
+    CMD_DELETE = 7,
+    CMD_STOP = 9,
+    CMD_PROTO_POWER = 12,
+    CMD_BUY_SELL_RESOURCES = 13,
+    CMD_UNGARRISON = 14,
+    CMD_RESIGN = 16,
+    CMD_UNKNOWN_18 = 18,
+    CMD_TRIBUTE = 19,
+    CMD_FINISH_UNIT_TRANSFORM = 23,
+    CMD_SET_UNIT_STANCE = 25,
+    CMD_CHANGE_DIPLOMACY = 26,
+    CMD_TOWN_BELL = 34,
+    CMD_AUTO_SCOUT_EVENT = 35,
+    CMD_CHANGE_CONTROL_GROUP = 37,
+    CMD_REPAIR = 38,
+    CMD_TAUNT = 41,
+    CMD_CHEAT = 44,
+    CMD_CANCEL_QUEUED_ITEM = 45,
+    CMD_SET_FORMATION = 48,
+    CMD_START_UNIT_TRANSFORM = 53,
+    CMD_UNKNOWN_55 = 55,
+    CMD_AUTOQUEUE = 66,
+    CMD_TOGGLE_AUTO_UNIT_ABILITY = 67,
+    CMD_TIME_SHIFT = 68,
+    CMD_BUILD_WALL_CONNECTOR = 69,
+    CMD_SEEK_SHELTER = 71,
+    CMD_PREQUEUE_TECH = 72,
+    CMD_PREBUY_GOD_POWER = 75
+};
+
+typedef struct {
+    uchar extraByteCount;
+    if (extraByteCount > 0) {
+        uchar extraBytes[extraByteCount];
+    }
+    uchar unk;
+    if (unk != 1) {
+        Printf("Footer unk not 1 at offset %d: %d\n", startof(unk), unk);
+        Exit(1);
+    }
+    uchar padding[8];
+    ushort oneFourthFooterLength;
+    uchar padding2[2];
+    if (oneFourthFooterLength > 0) {
+        uint32 footerData[oneFourthFooterLength];
+    }
+} Footer;
+
+typedef struct {
+    local int commandStart = FTell();
+    
+    uchar header[10];
+    local GameCommandType commandType = (GameCommandType)header[1];
+    
+    if (commandType == 14) {
+        uchar extraHeader[20];
+    } else {
+        uchar extraHeader[8];
+    }
+    
+    uint32 three;
+    if (three != 3) {
+        Printf("Expected 3 but got %d at offset %d\n", three, startof(three));
+        Exit(1);
+    }
+    
+    local int playerId;
+    if (commandType == 19) {
+        uint32 padding;
+        playerId = header[7];
+    } else {
+        ushort one;
+        if (one != 1) {
+            Printf("Expected 1 but got %d at offset %d\n", one, startof(one));
+            Exit(1);
+        }
+        ushort padding1;
+        ushort playerIdShort;
+        playerId = playerIdShort;
+        ushort padding2;
+    }
+    
+    uint32 padding3;
+    ushort numUnits;
+    ushort padding4;
+    
+    if (numUnits > 0) {
+        uint32 sourceUnits[numUnits];
+    }
+    
+    ushort numVectors;
+    ushort padding5;
+    
+    if (numVectors > 0) {
+        Vector3 sourceVectors[numVectors];
+    }
+    
+    ushort numPreArgumentBytes;
+    ushort padding6;
+    
+    local int totalPreArgBytes = 13 + numPreArgumentBytes;
+    if (totalPreArgBytes > 0) {
+        uchar preArgumentBytes[totalPreArgBytes];
+    }
+
+    switch (commandType) {
+        case CMD_TASK:
+            uint32 taskData[7];
+            Vector3 taskVector;
+            float taskFloat;
+            break;
+            
+        case CMD_RESEARCH:
+            uint32 researchData[3];
+            break;
+            
+        case CMD_TRAIN:
+            uint32 trainData[4];
+            uchar trainExtra[2];
+            break;
+            
+        case CMD_BUILD:
+            uint32 buildData[3];
+            Vector3 buildLocation;
+            uint32 buildData2[2];
+            float buildData3;
+            uint32 buildData4[4];
+            break;
+            
+        case CMD_SET_GATHER_POINT:
+            uint32 gatherData[2];
+            Vector3 gatherVector;
+            float gatherFloat;
+            uint32 gatherData2[2];
+            break;
+            
+        case CMD_DELETE:
+            uint32 deleteData[2];
+            uchar deleteExtra;
+            break;
+            
+        case CMD_STOP:
+            uint32 stopData[2];
+            break;
+            
+        case CMD_PROTO_POWER:
+            uint32 protoPowerData[3];
+            Vector3 location1;
+            Vector3 location2;
+            uint32 protoPowerData2[2];
+            float protoPowerFloat;
+            uint32 protoPowerData3[2];
+            uchar protoPowerExtra;
+            break;
+            
+        case CMD_BUY_SELL_RESOURCES:
+            uint32 marketData[4];
+            float marketQuantity;
+            break;
+            
+        case CMD_UNGARRISON:
+            uint32 ungarrisonData[2];
+            break;
+            
+        case CMD_RESIGN:
+            uint32 resignData[5];
+            uchar resignExtra;
+            break;
+            
+        case CMD_UNKNOWN_18:
+            uint32 unknown18Data[3];
+            break;
+            
+        case CMD_TRIBUTE:
+            uint32 tributeData[4];
+            float tributeFloat[2];
+            uchar tributeExtra;
+            break;
+            
+        case CMD_FINISH_UNIT_TRANSFORM:
+            uint32 finishTransformData[4];
+            uchar finishTransformExtra[2];
+            break;
+            
+        case CMD_SET_UNIT_STANCE:
+            uint32 stanceData[2];
+            uchar stanceExtra[2];
+            uint32 stanceData2;
+            break;
+            
+        case CMD_CHANGE_DIPLOMACY:
+            uint32 diplomacyData[2];
+            uchar diplomacyExtra;
+            uint32 diplomacyData2;
+            break;
+            
+        case CMD_TOWN_BELL:
+            uint32 townBellData[2];
+            break;
+            
+        case CMD_AUTO_SCOUT_EVENT:
+            uint32 autoScoutData[3];
+            break;
+            
+        case CMD_CHANGE_CONTROL_GROUP:
+            uint32 controlGroupData[2];
+            uchar controlGroupExtra;
+            uint32 controlGroupData2;
+            break;
+            
+        case CMD_REPAIR:
+            uint32 repairData[3];
+            break;
+            
+        case CMD_TAUNT:
+            uint32 tauntData[2];
+            uint32 tauntId;
+            uint32 tauntData2[7];
+            uchar tauntExtra[5];
+            break;
+            
+        case CMD_CHEAT:
+            uint32 cheatData[4];
+            break;
+            
+        case CMD_CANCEL_QUEUED_ITEM:
+            uint32 cancelData[5];
+            break;
+            
+        case CMD_SET_FORMATION:
+            uint32 formationData[4];
+            break;
+            
+        case CMD_START_UNIT_TRANSFORM:
+            uint32 startTransformData[3];
+            break;
+            
+        case CMD_UNKNOWN_55:
+            uint32 unknown55Data[2];
+            Vector3 unknown55Vector;
+            break;
+            
+        case CMD_AUTOQUEUE:
+            uint32 autoqueueData[3];
+            break;
+            
+        case CMD_TOGGLE_AUTO_UNIT_ABILITY:
+            uint32 toggleAbilityData[2];
+            uchar toggleAbilityExtra;
+            break;
+            
+        case CMD_TIME_SHIFT:
+            uint32 timeShiftData[2];
+            Vector3 timeShiftVector[2];
+            break;
+            
+        case CMD_BUILD_WALL_CONNECTOR:
+            uint32 wallConnectorData[3];
+            Vector3 wallConnectorVector[2];
+            break;
+            
+        case CMD_SEEK_SHELTER:
+            uint32 seekShelterData[2];
+            uchar unknown[4];
+            break;
+            
+        case CMD_PREQUEUE_TECH:
+            uint32 prequeueTechData[3];
+            uchar prequeueTechExtra;
+            break;
+            
+        case CMD_PREBUY_GOD_POWER:
+            uint32 prebuyGodPowerData[4];
+            break;
+            
+        default:
+            Printf("Unknown command at offset %d: %d\n", startof(commandType), commandType);
+            Exit(1);
+    }
+} GameCommand <read=ReadGameCommand>;string ReadGameCommand(GameCommand &cmd) {    local string result;    local string cmdName;    switch (cmd.commandType) {        case CMD_TASK: cmdName = "Task"; break;        case CMD_RESEARCH: cmdName = "Research"; break;        case CMD_TRAIN: cmdName = "Train"; break;        case CMD_BUILD: cmdName = "Build"; break;        case CMD_SET_GATHER_POINT: cmdName = "Set Gather Point"; break;        case CMD_DELETE: cmdName = "Delete"; break;        case CMD_STOP: cmdName = "Stop"; break;        case CMD_PROTO_POWER: cmdName = "Proto Power"; break;        case CMD_BUY_SELL_RESOURCES: cmdName = "Buy/Sell Resources"; break;        case CMD_UNGARRISON: cmdName = "Ungarrison"; break;        case CMD_RESIGN: cmdName = "Resign"; break;        case CMD_UNKNOWN_18: cmdName = "Unknown 18"; break;        case CMD_TRIBUTE: cmdName = "Tribute"; break;        case CMD_FINISH_UNIT_TRANSFORM: cmdName = "Finish Unit Transform"; break;        case CMD_SET_UNIT_STANCE: cmdName = "Set Unit Stance"; break;        case CMD_CHANGE_DIPLOMACY: cmdName = "Change Diplomacy"; break;        case CMD_TOWN_BELL: cmdName = "Town Bell"; break;        case CMD_AUTO_SCOUT_EVENT: cmdName = "Auto Scout Event"; break;        case CMD_CHANGE_CONTROL_GROUP: cmdName = "Change Control Group"; break;        case CMD_REPAIR: cmdName = "Repair"; break;        case CMD_TAUNT: cmdName = "Taunt"; break;        case CMD_CHEAT: cmdName = "Cheat"; break;        case CMD_CANCEL_QUEUED_ITEM: cmdName = "Cancel Queued Item"; break;        case CMD_SET_FORMATION: cmdName = "Set Formation"; break;        case CMD_START_UNIT_TRANSFORM: cmdName = "Start Unit Transform"; break;        case CMD_UNKNOWN_55: cmdName = "Unknown 55"; break;        case CMD_AUTOQUEUE: cmdName = "Autoqueue"; break;        case CMD_TOGGLE_AUTO_UNIT_ABILITY: cmdName = "Toggle Auto Unit Ability"; break;        case CMD_TIME_SHIFT: cmdName = "Time Shift"; break;        case CMD_BUILD_WALL_CONNECTOR: cmdName = "Build Wall Connector"; break;        case CMD_SEEK_SHELTER: cmdName = "Seek Shelter"; break;        case CMD_PREQUEUE_TECH: cmdName = "Prequeue Tech"; break;        case CMD_PREBUY_GOD_POWER: cmdName = "Prebuy God Power"; break;        default: Printf("Missing command name: %d\n", cmd.commandType); Exit(1);    }    SPrintf(result, "%s (Player %d)", cmdName, cmd.playerId);    return result;}
+
+typedef struct {
+    uint32 entryType;
+    uchar earlyByte;
+    
+    if ((entryType & 225) != entryType) {
+        Printf("Bad entry type %d at offset %d\n", entryType, startof(entryType));
+        Exit(1);
+    }
+    if ((entryType & 96) == 96) {
+        Printf("Invalid entry type combination at offset %d\n", startof(entryType));
+        Exit(1);
+    }
+    
+    if ((entryType & 1) == 0) {
+        uint32 padding1;
+    } else {
+        uchar padding2;
+    }
+    
+    local int numCommands = 0;
+    if ((entryType & 96) != 0) {
+        if ((entryType & 32) != 0) {
+            uchar numItems;
+            numCommands = numItems;
+        } else if ((entryType & 64) != 0) {
+            uint32 numItems;
+            numCommands = numItems;
+        }
+        
+        GameCommand commands[numCommands] <optimize=false>;
+    }
+    
+    if ((entryType & 128) != 0) {
+        uchar numSelectedUnits;
+        if (numSelectedUnits > 0 && numSelectedUnits < 100) {
+            uint32 selectedUnits[numSelectedUnits];
+        }
+    }
+    
+    Footer footer;
+    
+    uint32 entryIdx;
+    uchar finalByte;
+    if (finalByte != 0) {
+        Printf("Final byte not 0: %d at offset %d\n", finalByte, startof(finalByte));
+        Exit(1);
+    }
+} CommandList <read=ReadCommandList>;
+
+string ReadCommandList(CommandList &cmdList) {
+    local string result;
+    local float gameTime = cmdList.entryIdx / 20.0;
+    local int cmdSize = 0;
+    if (exists(cmdList.numItems)) {
+        cmdSize = cmdList.numItems;
+    }
+    SPrintf(result, "Entry %d (%.2fs) - Type: %d - Commands: %d", cmdList.entryIdx, gameTime, cmdList.entryType, cmdSize);
+    return result;
+}
+
+typedef struct (int commandCount, int dataStart) {
+    local int64 footerPos = FindFirst("00 01 00 00 00 00 00,h", true, false, FINDMETHOD_NORMAL, 0.0, 1, dataStart);
+    if (footerPos == -1) {
+        Printf("Could not find game commands footer at offset %d\n", dataStart);
+        Exit(1);
+    }
+    
+    FSeek(footerPos);
+    Footer firstFooter;
+    
+    uint32 unk;
+    uchar unk2;
+        
+    CommandList commandList[commandCount] <bgcolor=COLOR_COMMANDS,optimize=false>;
+} GameCommands;
+
+// ==============================================================================================================================
+// Main parse logic
+// ==============================================================================================================================
+
+SetBackColor(COLOR_HEADER);
+
+char header[23];
+uint32 commandCount;
+uint32 unknown;
+char header2[232];
+char svHeader[2];
+if (svHeader != "sv") {
+    Printf("SV header did not match at offset %d: %s\n", startof(svHeader), svHeader);
+    Exit(1);
+}
+uint32 commandOffset;
+uint32 unknownOffset;
+
+Node rootNode;
+if (rootNode.token != "BG") {
+    Printf("Root node token not BG at offset %d: %s\n", startof(rootNode.token), rootNode.token);
+    Exit(1);
+}
+
+if (FTell() != commandOffset) {
+    Printf("Command offset not at offset %d: %d\n", commandOffset, FTell());
+    Exit(1);
+}
+
+GameCommands gameCommands(commandCount-1, commandOffset);
