@@ -27,6 +27,7 @@ local int COLOR_COMMANDS = cLtYellow;
 local int COLOR_BUILD_INFO = cDkPurple;
 local int COLOR_XMB_MAP = cDkRed;
 local int COLOR_NODES = cLtRed;
+local int COLOR_WORLD_OBJECTS = cLtAqua;
 
 typedef struct {
     ushort numChars;
@@ -150,8 +151,8 @@ typedef struct (int dataEnd) {
 // ==============================================================================================================================
 
 enum <int32> ProfileKeyType {
-    PROFILE_INT32 = 1,
-    PROFILE_INT32_2 = 2,
+    PROFILE_UINT32 = 1,
+    PROFILE_INT32 = 2,
     PROFILE_GAMESYNCSTATE = 3,
     PROFILE_INT16 = 4,
     PROFILE_BOOL = 6,
@@ -162,13 +163,17 @@ typedef struct {
     UTF16String keyName;
     ProfileKeyType keyType;
     switch (keyType) {
+        // not confirmed, all encountered values so far are 0
+        case PROFILE_UINT32:
+            uint32 uint32Value;
+            break;
         case PROFILE_INT32:
-        case PROFILE_INT32_2:
             int32 int32Value;
             break;
         case PROFILE_GAMESYNCSTATE:
             uchar gameSyncState[8];
             break;
+        // not confirmed, all encountered values so far are 0
         case PROFILE_INT16:
             int16 int16Value;
             break;
@@ -199,6 +204,18 @@ typedef struct {
     uint32 unknown;
     UTF16String build;
 } BuildInfo;
+
+// ==============================================================================================================================
+// RecordedGameWorldObject
+// ==============================================================================================================================
+
+typedef struct {
+    uint32 id;
+    uint32 protoUnit;
+    short unk;
+    float positionX;
+    float positionZ;
+} RecordedGameWorldObject;
 
 // ==============================================================================================================================
 // Node
@@ -257,6 +274,10 @@ typedef struct {
                 break;
             case "BG/GM/GD/gd":
                 XmbMap xmbMap(dataEnd) <bgcolor=COLOR_XMB_MAP>;
+                i = dataEnd;
+                break;
+            case "BG/J1/KB/KB/K9":
+                RecordedGameWorldObject recordedGameWorldObject <bgcolor=COLOR_WORLD_OBJECTS>;
                 i = dataEnd;
                 break;
             default:
@@ -337,8 +358,6 @@ typedef struct {
 } Footer;
 
 typedef struct {
-    local int commandStart = FTell();
-    
     uchar header[10];
     local GameCommandType commandType = (GameCommandType)header[1];
     

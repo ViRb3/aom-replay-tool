@@ -12,6 +12,12 @@
     - Heuristics for unknown node traversal
   - Game commands
 
+### Resources
+
+- https://github.com/erin-fitzpatric/next-aom-gg/tree/main/src/server/recParser
+- https://github.com/jerkeeler/restoration
+- https://github.com/Logg-y/retoldrecprocessor
+
 ### Future plans
 
 Anonymize replay from profile keys:
