@@ -567,7 +567,50 @@ typedef struct {
             Printf("Unknown command at offset %d: %d\n", startof(commandType), commandType);
             Exit(1);
     }
-} GameCommand <read=ReadGameCommand>;string ReadGameCommand(GameCommand &cmd) {    local string result;    local string cmdName;    switch (cmd.commandType) {        case CMD_TASK: cmdName = "Task"; break;        case CMD_RESEARCH: cmdName = "Research"; break;        case CMD_TRAIN: cmdName = "Train"; break;        case CMD_BUILD: cmdName = "Build"; break;        case CMD_SET_GATHER_POINT: cmdName = "Set Gather Point"; break;        case CMD_DELETE: cmdName = "Delete"; break;        case CMD_STOP: cmdName = "Stop"; break;        case CMD_PROTO_POWER: cmdName = "Proto Power"; break;        case CMD_BUY_SELL_RESOURCES: cmdName = "Buy/Sell Resources"; break;        case CMD_UNGARRISON: cmdName = "Ungarrison"; break;        case CMD_RESIGN: cmdName = "Resign"; break;        case CMD_UNKNOWN_18: cmdName = "Unknown 18"; break;        case CMD_TRIBUTE: cmdName = "Tribute"; break;        case CMD_FINISH_UNIT_TRANSFORM: cmdName = "Finish Unit Transform"; break;        case CMD_SET_UNIT_STANCE: cmdName = "Set Unit Stance"; break;        case CMD_CHANGE_DIPLOMACY: cmdName = "Change Diplomacy"; break;        case CMD_TOWN_BELL: cmdName = "Town Bell"; break;        case CMD_AUTO_SCOUT_EVENT: cmdName = "Auto Scout Event"; break;        case CMD_CHANGE_CONTROL_GROUP: cmdName = "Change Control Group"; break;        case CMD_REPAIR: cmdName = "Repair"; break;        case CMD_TAUNT: cmdName = "Taunt"; break;        case CMD_CHEAT: cmdName = "Cheat"; break;        case CMD_CANCEL_QUEUED_ITEM: cmdName = "Cancel Queued Item"; break;        case CMD_SET_FORMATION: cmdName = "Set Formation"; break;        case CMD_START_UNIT_TRANSFORM: cmdName = "Start Unit Transform"; break;        case CMD_UNKNOWN_55: cmdName = "Unknown 55"; break;        case CMD_AUTOQUEUE: cmdName = "Autoqueue"; break;        case CMD_TOGGLE_AUTO_UNIT_ABILITY: cmdName = "Toggle Auto Unit Ability"; break;        case CMD_TIME_SHIFT: cmdName = "Time Shift"; break;        case CMD_BUILD_WALL_CONNECTOR: cmdName = "Build Wall Connector"; break;        case CMD_SEEK_SHELTER: cmdName = "Seek Shelter"; break;        case CMD_PREQUEUE_TECH: cmdName = "Prequeue Tech"; break;        case CMD_PREBUY_GOD_POWER: cmdName = "Prebuy God Power"; break;        default: Printf("Missing command name: %d\n", cmd.commandType); Exit(1);    }    SPrintf(result, "%s (Player %d)", cmdName, cmd.playerId);    return result;}
+} GameCommand <read=ReadGameCommand>;
+
+string ReadGameCommand(GameCommand &cmd) {
+    local string result;
+    local string cmdName;
+    switch (cmd.commandType) {
+        case CMD_TASK: cmdName = "Task"; break;
+        case CMD_RESEARCH: cmdName = "Research"; break;
+        case CMD_TRAIN: cmdName = "Train"; break;
+        case CMD_BUILD: cmdName = "Build"; break;
+        case CMD_SET_GATHER_POINT: cmdName = "Set Gather Point"; break;
+        case CMD_DELETE: cmdName = "Delete"; break;
+        case CMD_STOP: cmdName = "Stop"; break;
+        case CMD_PROTO_POWER: cmdName = "Proto Power"; break;
+        case CMD_BUY_SELL_RESOURCES: cmdName = "Buy/Sell Resources"; break;
+        case CMD_UNGARRISON: cmdName = "Ungarrison"; break;
+        case CMD_RESIGN: cmdName = "Resign"; break;
+        case CMD_UNKNOWN_18: cmdName = "Unknown 18"; break;
+        case CMD_TRIBUTE: cmdName = "Tribute"; break;
+        case CMD_FINISH_UNIT_TRANSFORM: cmdName = "Finish Unit Transform"; break;
+        case CMD_SET_UNIT_STANCE: cmdName = "Set Unit Stance"; break;
+        case CMD_CHANGE_DIPLOMACY: cmdName = "Change Diplomacy"; break;
+        case CMD_TOWN_BELL: cmdName = "Town Bell"; break;
+        case CMD_AUTO_SCOUT_EVENT: cmdName = "Auto Scout Event"; break;
+        case CMD_CHANGE_CONTROL_GROUP: cmdName = "Change Control Group"; break;
+        case CMD_REPAIR: cmdName = "Repair"; break;
+        case CMD_TAUNT: cmdName = "Taunt"; break;
+        case CMD_CHEAT: cmdName = "Cheat"; break;
+        case CMD_CANCEL_QUEUED_ITEM: cmdName = "Cancel Queued Item"; break;
+        case CMD_SET_FORMATION: cmdName = "Set Formation"; break;
+        case CMD_START_UNIT_TRANSFORM: cmdName = "Start Unit Transform"; break;
+        case CMD_UNKNOWN_55: cmdName = "Unknown 55"; break;
+        case CMD_AUTOQUEUE: cmdName = "Autoqueue"; break;
+        case CMD_TOGGLE_AUTO_UNIT_ABILITY: cmdName = "Toggle Auto Unit Ability"; break;
+        case CMD_TIME_SHIFT: cmdName = "Time Shift"; break;
+        case CMD_BUILD_WALL_CONNECTOR: cmdName = "Build Wall Connector"; break;
+        case CMD_SEEK_SHELTER: cmdName = "Seek Shelter"; break;
+        case CMD_PREQUEUE_TECH: cmdName = "Prequeue Tech"; break;
+        case CMD_PREBUY_GOD_POWER: cmdName = "Prebuy God Power"; break;
+        default: Printf("Missing command name: %d\n", cmd.commandType); Exit(1);
+    }
+    SPrintf(result, "%s (Player %d)", cmdName, cmd.playerId);
+    return result;
+}
 
 typedef struct {
     uint32 entryType;
