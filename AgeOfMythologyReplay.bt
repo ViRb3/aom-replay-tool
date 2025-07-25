@@ -399,16 +399,13 @@ typedef struct {
             Vector3 taskVector;
             float taskFloat;
             break;
-            
         case CMD_RESEARCH:
             uint32 researchData[3];
             break;
-            
         case CMD_TRAIN:
             uint32 trainData[4];
             uchar trainExtra[2];
             break;
-            
         case CMD_BUILD:
             uint32 buildData[3];
             Vector3 buildLocation;
@@ -416,23 +413,19 @@ typedef struct {
             float buildData3;
             uint32 buildData4[4];
             break;
-            
         case CMD_SET_GATHER_POINT:
             uint32 gatherData[2];
             Vector3 gatherVector;
             float gatherFloat;
             uint32 gatherData2[2];
             break;
-            
         case CMD_DELETE:
             uint32 deleteData[2];
             uchar deleteExtra;
             break;
-            
         case CMD_STOP:
             uint32 stopData[2];
             break;
-            
         case CMD_PROTO_POWER:
             uint32 protoPowerData[3];
             Vector3 location1;
@@ -442,127 +435,101 @@ typedef struct {
             uint32 protoPowerData3[2];
             uchar protoPowerExtra;
             break;
-            
         case CMD_BUY_SELL_RESOURCES:
             uint32 marketData[4];
             float marketQuantity;
             break;
-            
         case CMD_UNGARRISON:
             uint32 ungarrisonData[2];
             break;
-            
         case CMD_RESIGN:
             uint32 resignData[5];
             uchar resignExtra;
             break;
-            
         case CMD_UNKNOWN_18:
             uint32 unknown18Data[3];
             break;
-            
         case CMD_TRIBUTE:
             uint32 tributeData[4];
             float tributeFloat[2];
             uchar tributeExtra;
             break;
-            
         case CMD_FINISH_UNIT_TRANSFORM:
             uint32 finishTransformData[4];
             uchar finishTransformExtra[2];
             break;
-            
         case CMD_SET_UNIT_STANCE:
             uint32 stanceData[2];
             uchar stanceExtra[2];
             uint32 stanceData2;
             break;
-            
         case CMD_CHANGE_DIPLOMACY:
             uint32 diplomacyData[2];
             uchar diplomacyExtra;
             uint32 diplomacyData2;
             break;
-            
         case CMD_TOWN_BELL:
             uint32 townBellData[2];
             break;
-            
         case CMD_AUTO_SCOUT_EVENT:
             uint32 autoScoutData[3];
             break;
-            
         case CMD_CHANGE_CONTROL_GROUP:
             uint32 controlGroupData[2];
             uchar controlGroupExtra;
             uint32 controlGroupData2;
             break;
-            
         case CMD_REPAIR:
             uint32 repairData[3];
             break;
-            
         case CMD_TAUNT:
             uint32 tauntData[2];
             uint32 tauntId;
             uint32 tauntData2[7];
             uchar tauntExtra[5];
             break;
-            
         case CMD_CHEAT:
             uint32 cheatData[4];
             break;
-            
         case CMD_CANCEL_QUEUED_ITEM:
             uint32 cancelData[5];
             break;
-            
         case CMD_SET_FORMATION:
             uint32 formationData[4];
             break;
-            
         case CMD_START_UNIT_TRANSFORM:
             uint32 startTransformData[3];
             break;
-            
         case CMD_UNKNOWN_55:
             uint32 unknown55Data[2];
             Vector3 unknown55Vector;
             break;
-            
         case CMD_AUTOQUEUE:
             uint32 autoqueueData[3];
             break;
-            
         case CMD_TOGGLE_AUTO_UNIT_ABILITY:
             uint32 toggleAbilityData[2];
             uchar toggleAbilityExtra;
             break;
-            
         case CMD_TIME_SHIFT:
             uint32 timeShiftData[2];
             Vector3 timeShiftVector[2];
             break;
-            
         case CMD_BUILD_WALL_CONNECTOR:
             uint32 wallConnectorData[3];
             Vector3 wallConnectorVector[2];
             break;
-            
         case CMD_SEEK_SHELTER:
             uint32 seekShelterData[2];
             uchar unknown[4];
             break;
-            
         case CMD_PREQUEUE_TECH:
             uint32 prequeueTechData[3];
             uchar prequeueTechExtra;
             break;
-            
         case CMD_PREBUY_GOD_POWER:
             uint32 prebuyGodPowerData[4];
-            break;
-            
+            break;    
         default:
             Printf("Unknown command at offset %d: %d\n", startof(commandType), commandType);
             Exit(1);
