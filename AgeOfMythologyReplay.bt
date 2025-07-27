@@ -297,7 +297,7 @@ typedef struct {
         }
         commitPadding(i);
     }
-} Node <read=(this.token)>; // size=(6 + ReadUInt(startof(this) + 2))
+} Node <read=(this.token),size=(6 + ReadUInt(startof(this) + 2))>;
 
 // ==============================================================================================================================
 // Game Commands
