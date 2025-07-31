@@ -7,7 +7,7 @@
 //   Purpose: Parse Age of Mythology Retold replay files.
 //  Category: Game
 // File Mask: *.mythrec*
-//  ID Bytes: 06 00 00 00 52 47 //....RG
+//  ID Bytes: [+4] 52 47 //????RG
 //   History:
 //   1.0   2025-07-24  Initial release based on restoration parser
 //
@@ -201,7 +201,6 @@ typedef struct {
 // ==============================================================================================================================
 
 typedef struct {
-    uint32 unknown;
     UTF16String build;
 } BuildInfo;
 
@@ -345,15 +344,17 @@ typedef struct {
         uchar extraBytes[extraByteCount];
     }
     uchar unk;
-    if (unk != 1) {
-        Printf("Footer unk not 1 at offset %d: %d\n", startof(unk), unk);
+    if (unk == 0) {
+        uchar padding[8];
+    } else if (unk != 1) {
+        Printf("Footer unk not 0 or 1 at offset %d: %d\n", startof(unk), unk);
         Exit(1);
     }
-    uchar padding[8];
-    ushort oneFourthFooterLength;
+    
+    ushort intDataCount;
     uchar padding2[2];
-    if (oneFourthFooterLength > 0) {
-        uint32 footerData[oneFourthFooterLength];
+    if (intDataCount > 0) {
+        uint32 intData[intDataCount];
     }
 } Footer;
 
@@ -688,13 +689,13 @@ string ReadCommandList(CommandList &cmdList) {
 }
 
 typedef struct (int commandCount, int dataStart) {
-    local int64 footerPos = FindFirst("00 01 00 00 00 00 00,h", true, false, FINDMETHOD_NORMAL, 0.0, 1, dataStart);
+    local int64 footerPos = FindFirst("19 00 00 00,h", true, false, FINDMETHOD_NORMAL, 0.0, 1, dataStart);
     if (footerPos == -1) {
         Printf("Could not find game commands footer at offset %d\n", dataStart);
         Exit(1);
     }
     
-    byte header[footerPos-FTell()-9];
+    byte header[footerPos-FTell()-19];
         
     CommandList commandList[commandCount] <bgcolor=COLOR_COMMANDS,optimize=false>;
 } GameCommands;
