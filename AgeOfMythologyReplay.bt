@@ -694,11 +694,7 @@ typedef struct (int commandCount, int dataStart) {
         Exit(1);
     }
     
-    byte header[footerPos-FTell()];
-    Footer firstFooter;
-    
-    uint32 unk;
-    uchar unk2;
+    byte header[footerPos-FTell()-9];
         
     CommandList commandList[commandCount] <bgcolor=COLOR_COMMANDS,optimize=false>;
 } GameCommands;
@@ -737,4 +733,4 @@ if (FTell() != commandOffset) {
     Exit(1);
 }
 
-GameCommands gameCommands(commandCount-1, commandOffset);
+GameCommands gameCommands(commandCount, commandOffset);
