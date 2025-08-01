@@ -28,8 +28,7 @@ const local int COLOR_WORLD_OBJECTS = cLtAqua;
 const local int COLOR_SOURCE_MAP = cDkGreen;
 
 typedef struct {
-    ushort numChars;
-    ushort padding;
+    uint32 numChars;
     if (numChars > 0) {
         ushort chars[numChars] <format=hex>;
     }
@@ -358,8 +357,7 @@ typedef struct {
         Exit(1);
     }
     
-    ushort intDataCount;
-    uchar padding2[2];
+    uint32 intDataCount;
     if (intDataCount > 0) {
         uint32 intData[intDataCount];
     }
@@ -393,28 +391,24 @@ typedef struct {
             Exit(1);
         }
         ushort padding1;
-        ushort playerIdShort;
+        uint32 playerIdShort;
         playerId = playerIdShort;
-        ushort padding2;
     }
     
     uint32 padding3;
-    ushort numUnits;
-    ushort padding4;
+    uint32 numUnits;
     
     if (numUnits > 0) {
         uint32 sourceUnits[numUnits];
     }
     
-    ushort numVectors;
-    ushort padding5;
+    uint32 numVectors;
     
     if (numVectors > 0) {
         Vector3 sourceVectors[numVectors];
     }
     
-    ushort numPreArgumentBytes;
-    ushort padding6;
+    uint32 numPreArgumentBytes;
     
     local int totalPreArgBytes = 13 + numPreArgumentBytes;
     if (totalPreArgBytes > 0) {
