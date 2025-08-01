@@ -27,6 +27,13 @@ const local int COLOR_NODES = cLtRed;
 const local int COLOR_WORLD_OBJECTS = cLtAqua;
 const local int COLOR_SOURCE_MAP = cDkGreen;
 
+void assert(int condition, string name, uint32 offset) {
+    if (!condition) {
+        Printf("Assertion failed: %s at offset %d\n", name, offset);
+        Exit(1);
+    }
+}
+
 typedef struct {
     uint32 numChars;
     if (numChars > 0) {
@@ -75,10 +82,7 @@ typedef struct {
     local int nodeStart = FTell();
     
     char xn[2];
-    if (xn != "XN") {
-        Printf("Invalid XN marker at offset %d: %s\n", startof(xn), xn);
-        Exit(1); 
-    }
+    assert(xn == "XN", "XMB XN", startof(xn));
     
     uchar unknown1[4];
     
@@ -101,26 +105,14 @@ typedef struct {
 
 typedef struct {
     char x1[2];
-    if (x1 != "X1") {
-        Printf("Invalid X1 marker at offset %d: %s\n", startof(x1), x1);
-        Exit(1);
-    }
+    assert(x1 == "X1", "XMB X1", startof(x1));
     uchar padding1[4];
     char xr[2];
-    if (xr != "XR") {
-        Printf("Invalid XR marker at offset %d: %s\n", startof(xr), xr);
-        Exit(1);
-    }
+    assert(xr == "XR", "XMB XR", startof(xr));
     uint32 unk1;
-    if (unk1 != 4) {
-        Printf("Invalid unk1 marker at offset %d: %d\n", startof(unk1), unk1);
-        Exit(1);
-    }
+    assert(unk1 == 4, "XMB unk1", startof(unk1));
     uint32 version;
-    if (version != 8) {
-        Printf("Invalid version marker at offset %d: %d\n", startof(version), version);
-        Exit(1);
-    }
+    assert(version == 8, "XMB version", startof(version));
 
     uint32 numElements;
     if (numElements > 0) {
@@ -170,28 +162,14 @@ typedef struct {
     ProfileKeyType keyType;
     switch (keyType) {
         // not confirmed, all encountered values so far are 0
-        case PROFILE_UINT32:
-            uint32 uint32Value;
-            break;
-        case PROFILE_INT32:
-            int32 int32Value;
-            break;
-        case PROFILE_GAMESYNCSTATE:
-            uchar gameSyncState[8];
-            break;
+        case PROFILE_UINT32: uint32 uint32Value; break;
+        case PROFILE_INT32: int32 int32Value; break;
+        case PROFILE_GAMESYNCSTATE: uchar gameSyncState[8]; break;
         // not confirmed, all encountered values so far are 0
-        case PROFILE_INT16:
-            int16 int16Value;
-            break;
-        case PROFILE_BOOL:
-            uchar boolValue;
-            break;
-        case PROFILE_STRING:
-            UTF16String stringValue;
-            break;
-        default:
-            Printf("Unknown profile key type at offset %d: %d\n", startof(keyType), keyType);
-            break;
+        case PROFILE_INT16: int16 int16Value; break;
+        case PROFILE_BOOL: uchar boolValue; break;
+        case PROFILE_STRING: UTF16String stringValue; break;
+        default: assert(0, "ProfileKey keyType", startof(keyType));
     }
 } ProfileKey <read=ReadUTF16String(this.keyName)>;
 
@@ -251,10 +229,7 @@ void commitPadding(int i) {
         // make sure we don't miss any XMBs with our current assumption that they exist only in one node
         local int xmbMatch = FindFirst("58 31 ?? ?? ?? ?? 58 52 04 00 00 00 08 00 00 00,h", 
                                 true, false, FINDMETHOD_WILDCARDS, 0.0, 1, FTell(), space);
-        if (xmbMatch != -1) {
-            Printf("Found unexpected XMB at offset %d\n", xmbMatch);
-            Exit(1);
-        }
+        assert(xmbMatch == -1, "unexpected XMB", xmbMatch);
         struct (int space) {
             byte data[space];
         } data(space);
@@ -352,9 +327,8 @@ typedef struct {
     uchar unk;
     if (unk == 0) {
         uchar padding[8];
-    } else if (unk != 1) {
-        Printf("Command list footer unk not 0 or 1 at offset %d: %d\n", startof(unk), unk);
-        Exit(1);
+    } else {
+        assert(unk == 1, "CommandListFooter unk", startof(unk));
     }
     
     uint32 intDataCount;
@@ -376,21 +350,14 @@ typedef struct {
     uchar extraHeader[8];
 
     uint32 three;
-    if (three != 3) {
-        Printf("Expected 3 but got %d at offset %d\n", three, startof(three));
-        Exit(1);
-    }
+    assert(three == 3, "GameCommand three", startof(three));
     
     uint32 hasPlayerId2;
     if (hasPlayerId2 == 1) {
         uint32 playerId2;
-        if (playerId != playerId2) {
-            Printf("Command playerIds don't match at offset %d\n", startof(playerId2));
-            Exit(1);
-        }
-    } else if (hasPlayerId2 != 0) {
-        Printf("hasPlayerId2 not 0 or 1 at offset %d\n", startof(one));
-        Exit(1);
+        assert(playerId == playerId2, "GameCommand playerIds", startof(playerId2));
+    } else {
+        assert(hasPlayerId2 == 0, "GameCommand hasPlayerId2", startof(hasPlayerId2));
     }
     
     uint32 padding3;
@@ -580,13 +547,11 @@ typedef struct {
             uint32 data2;
             break;    
         default:
-            Printf("Unknown command at offset %d: %d\n", startof(commandType), commandType);
-            Exit(1);
+            assert(0, "GameCommand commandType", startof(commandType));
     }
 } GameCommand <read=ReadGameCommand>;
 
 string ReadGameCommand(GameCommand &cmd) {
-    local string result;
     local string cmdName;
     switch (cmd.commandType) {
         case CMD_TASK: cmdName = "Task"; break;
@@ -622,24 +587,17 @@ string ReadGameCommand(GameCommand &cmd) {
         case CMD_SEEK_SHELTER: cmdName = "Seek Shelter"; break;
         case CMD_PREQUEUE_TECH: cmdName = "Prequeue Tech"; break;
         case CMD_PREBUY_GOD_POWER: cmdName = "Prebuy God Power"; break;
-        default: Printf("Missing command name: %d\n", cmd.commandType); Exit(1);
+        default: assert(0, "ReadGameCommand commandType", startof(cmd.commandType));
     }
-    SPrintf(result, "%s (Player %d)", cmdName, cmd.playerId);
-    return result;
+    return Str("%s (Player %d)", cmdName, cmd.playerId);;
 }
 
 typedef struct {
     uint32 entryType;
     uchar earlyByte;
     
-    if ((entryType & 225) != entryType) {
-        Printf("Bad entry type %d at offset %d\n", entryType, startof(entryType));
-        Exit(1);
-    }
-    if ((entryType & 96) == 96) {
-        Printf("Invalid entry type combination at offset %d\n", startof(entryType));
-        Exit(1);
-    }
+    assert((entryType & 225) == entryType, "CommandList entryType", startof(entryType));
+    assert((entryType & 96) != 96, "CommandList entryType combination", startof(entryType));
     
     if ((entryType & 1) == 0) {
         uint32 padding1;
@@ -671,29 +629,21 @@ typedef struct {
     
     uint32 entryIdx;
     uchar finalByte;
-    if (finalByte != 0) {
-        Printf("Final byte not 0: %d at offset %d\n", finalByte, startof(finalByte));
-        Exit(1);
-    }
+    assert(finalByte == 0, "CommandList finalByte", startof(finalByte));
 } CommandList <read=ReadCommandList>;
 
 string ReadCommandList(CommandList &cmdList) {
-    local string result;
     local float gameTime = cmdList.entryIdx / 20.0;
     local int cmdSize = 0;
     if (exists(cmdList.numItems)) {
         cmdSize = cmdList.numItems;
     }
-    SPrintf(result, "Entry %d (%.2fs) - Type: %d - Commands: %d", cmdList.entryIdx, gameTime, cmdList.entryType, cmdSize);
-    return result;
+    return Str("Entry %d (%.2fs) - Type: %d - Commands: %d", cmdList.entryIdx, gameTime, cmdList.entryType, cmdSize);
 }
 
 typedef struct (int commandCount, int dataStart) {
     local int64 footerPos = FindFirst("19 00 00 00,h", true, false, FINDMETHOD_NORMAL, 0.0, 1, dataStart);
-    if (footerPos == -1) {
-        Printf("Could not find command list footer at offset %d\n", dataStart);
-        Exit(1);
-    }
+    assert(footerPos != -1, "GameCommands footer", dataStart);
     
     byte header[footerPos-FTell()-19];
         
@@ -728,34 +678,21 @@ uint32 commandCount;
 uint32 sourceMapOffset;
 char header2[232];
 char svHeader[2];
-if (svHeader != "sv") {
-    Printf("SV header did not match at offset %d: %s\n", startof(svHeader), svHeader);
-    Exit(1);
-}
+assert(svHeader == "sv", "SV header", startof(svHeader));
 uint32 commandOffset;
 uint32 unknownOffset;
 
 if (ReadString(FTell(), 4) == "l33t") {
     Printf("Skipping node parsing due to l33t compression. To fix, please decompress it.\n");
     char nodeData[commandOffset-FTell()] <bgcolor=COLOR_NODES>;
-} else {
+} else if (ReadString(FTell(), 2) == "BG") {
     Node rootNode <bgcolor=COLOR_NODES>;
-    if (rootNode.token != "BG") {
-        Printf("Root node token not BG at offset %d: %s\n", startof(rootNode.token), rootNode.token);
-        Exit(1);
-    }
+} else {
+    assert(0, "Root node token", FTell());
 }
 
-if (FTell() != commandOffset) {
-    Printf("Commands not at offset %d: %d\n", commandOffset, FTell());
-    Exit(1);
-}
-
+assert(FTell() == commandOffset, "Commands offset", commandOffset);
 GameCommands gameCommands(commandCount, commandOffset);
 
-if (FTell() != sourceMapOffset) {
-    Printf("SourceMap not at offset %d: %d\n", sourceMapOffset, FTell());
-    Exit(1);
-}
-
+assert(FTell() == sourceMapOffset, "SourceMap offset", sourceMapOffset);
 SourceMap sourceMap <bgcolor=COLOR_SOURCE_MAP>;
