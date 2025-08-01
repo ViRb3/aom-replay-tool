@@ -304,6 +304,7 @@ enum <uint32> GameCommandType {
     CMD_AUTO_SCOUT_EVENT = 35,
     CMD_CHANGE_CONTROL_GROUP = 37,
     CMD_REPAIR = 38,
+    CMD_UNKNOWN_39 = 39,
     CMD_TAUNT = 41,
     CMD_CHEAT = 44,
     CMD_CANCEL_QUEUED_ITEM = 45,
@@ -316,7 +317,8 @@ enum <uint32> GameCommandType {
     CMD_BUILD_WALL_CONNECTOR = 69,
     CMD_SEEK_SHELTER = 71,
     CMD_PREQUEUE_TECH = 72,
-    CMD_PREBUY_GOD_POWER = 75
+    CMD_PREBUY_GOD_POWER = 75,
+    CMD_UNKNOWN_78 = 78
 };
 
 typedef struct {
@@ -487,6 +489,9 @@ typedef struct {
             uint32 data[2];
             uint32 target;
             break;
+        case CMD_UNKNOWN_39:
+            uchar data[12];
+            break;
         case CMD_TAUNT:
             uint32 data[2];
             uint32 tauntId;
@@ -543,7 +548,10 @@ typedef struct {
             uint32 data[2];
             uint32 protoPower;
             uint32 data2;
-            break;    
+            break;
+        case CMD_UNKNOWN_78:
+            uchar unknown[20];
+            break;
         default:
             assert(0, "GameCommand commandType", startof(commandType));
     }
@@ -572,6 +580,7 @@ string ReadGameCommand(GameCommand &cmd) {
         case CMD_AUTO_SCOUT_EVENT: cmdName = "Auto Scout Event"; break;
         case CMD_CHANGE_CONTROL_GROUP: cmdName = "Change Control Group"; break;
         case CMD_REPAIR: cmdName = "Repair"; break;
+        case CMD_UNKNOWN_39: cmdName = "Unknown 39"; break;
         case CMD_TAUNT: cmdName = "Taunt"; break;
         case CMD_CHEAT: cmdName = "Cheat"; break;
         case CMD_CANCEL_QUEUED_ITEM: cmdName = "Cancel Queued Item"; break;
@@ -585,6 +594,7 @@ string ReadGameCommand(GameCommand &cmd) {
         case CMD_SEEK_SHELTER: cmdName = "Seek Shelter"; break;
         case CMD_PREQUEUE_TECH: cmdName = "Prequeue Tech"; break;
         case CMD_PREBUY_GOD_POWER: cmdName = "Prebuy God Power"; break;
+        case CMD_UNKNOWN_78: cmdName = "Unknown 78"; break;
         default: assert(0, "ReadGameCommand commandType", startof(cmd.commandType));
     }
     return Str("%s (Player %d)", cmdName, cmd.playerId);;
