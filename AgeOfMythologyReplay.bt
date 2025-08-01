@@ -340,14 +340,12 @@ typedef struct {
 typedef struct {
     uchar header;
     GameCommandType commandType;
-
     uchar unk;
-    if (unk == 0xFF) {
-        uchar extraPadding[12];
+    if (commandType == CMD_UNGARRISON) {
+        uchar extraHeader[12];
     }
-
     uint32 playerId;
-    uchar extraHeader[8];
+    uchar extraHeader2[8];
 
     uint32 three;
     assert(three == 3, "GameCommand three", startof(three));
