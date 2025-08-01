@@ -9,26 +9,23 @@
 // File Mask: *.mythrec*
 //  ID Bytes: [+4] 52 47 //????RG
 //   History:
-//   1.0   2025-07-24  Initial release based on restoration parser
+//   1.0   2025-08-01  Initial release
 //
 // This template parses Age of Mythology Retold replay data.
-// NOTE: The replay must have its l33t compression removed inplace first.
+// NOTE: To parse node data, you must decompress the "l33t" section first.
 //------------------------------------------------
 
 LittleEndian();
 
-const int DATA_OFFSET = 6;
-const string ROOT_NODE_TOKEN = "BG";
-
-local int COLOR_HEADER = cLtGray;
-local int COLOR_PROFILE_KEYS = cLtBlue;
-local int COLOR_XMB = cLtGreen;
-local int COLOR_COMMANDS = cLtYellow;
-local int COLOR_BUILD_INFO = cDkPurple;
-local int COLOR_XMB_MAP = cDkRed;
-local int COLOR_NODES = cLtRed;
-local int COLOR_WORLD_OBJECTS = cLtAqua;
-local int COLOR_SOURCE_MAP = cDkGreen;
+const local int COLOR_HEADER = cLtGray;
+const local int COLOR_PROFILE_KEYS = cLtBlue;
+const local int COLOR_XMB = cLtGreen;
+const local int COLOR_COMMANDS = cLtYellow;
+const local int COLOR_BUILD_INFO = cDkPurple;
+const local int COLOR_XMB_MAP = cDkRed;
+const local int COLOR_NODES = cLtRed;
+const local int COLOR_WORLD_OBJECTS = cLtAqua;
+const local int COLOR_SOURCE_MAP = cDkGreen;
 
 typedef struct {
     ushort numChars;
@@ -747,7 +744,7 @@ uint32 commandOffset;
 uint32 unknownOffset;
 
 if (ReadString(FTell(), 4) == "l33t") {
-    Printf("L33t compression detected, skipping node parsing. To fix, please unpack first.\n");
+    Printf("Skipping node parsing due to l33t compression. To fix, please decompress it.\n");
     char nodeData[commandOffset-FTell()] <bgcolor=COLOR_NODES>;
 } else {
     Node rootNode <bgcolor=COLOR_NODES>;
