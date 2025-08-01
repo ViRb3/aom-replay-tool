@@ -359,9 +359,10 @@ typedef struct {
 } Footer;
 
 typedef struct {
-    uchar header[10];
-    local GameCommandType commandType = (GameCommandType)header[1];
-    
+    uchar header;
+    GameCommandType commandType;
+    uchar header2[8];
+        
     if (commandType == 14) {
         uchar extraHeader[20];
     } else {
