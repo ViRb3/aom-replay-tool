@@ -28,6 +28,7 @@ local int COLOR_BUILD_INFO = cDkPurple;
 local int COLOR_XMB_MAP = cDkRed;
 local int COLOR_NODES = cLtRed;
 local int COLOR_WORLD_OBJECTS = cLtAqua;
+local int COLOR_SOURCE_MAP = cDkGreen;
 
 typedef struct {
     ushort numChars;
@@ -46,6 +47,15 @@ string ReadUTF16String(UTF16String &str) {
         }
     }
     return result;
+}
+
+typedef struct {
+    uint32 itemSize;
+    char item[itemSize];
+} SafeCString <read=ReadSafeCString>;
+
+string ReadSafeCString(SafeCString &str) {
+    return str.item;
 }
 
 typedef struct {
@@ -347,7 +357,7 @@ typedef struct {
     if (unk == 0) {
         uchar padding[8];
     } else if (unk != 1) {
-        Printf("Footer unk not 0 or 1 at offset %d: %d\n", startof(unk), unk);
+        Printf("Command list footer unk not 0 or 1 at offset %d: %d\n", startof(unk), unk);
         Exit(1);
     }
     
@@ -356,7 +366,7 @@ typedef struct {
     if (intDataCount > 0) {
         uint32 intData[intDataCount];
     }
-} Footer;
+} CommandListFooter;
 
 typedef struct {
     uchar header;
@@ -668,7 +678,7 @@ typedef struct {
         }
     }
     
-    Footer footer;
+    CommandListFooter footer;
     
     uint32 entryIdx;
     uchar finalByte;
@@ -692,7 +702,7 @@ string ReadCommandList(CommandList &cmdList) {
 typedef struct (int commandCount, int dataStart) {
     local int64 footerPos = FindFirst("19 00 00 00,h", true, false, FINDMETHOD_NORMAL, 0.0, 1, dataStart);
     if (footerPos == -1) {
-        Printf("Could not find game commands footer at offset %d\n", dataStart);
+        Printf("Could not find command list footer at offset %d\n", dataStart);
         Exit(1);
     }
     
@@ -702,6 +712,23 @@ typedef struct (int commandCount, int dataStart) {
 } GameCommands;
 
 // ==============================================================================================================================
+// SourceMap
+// ==============================================================================================================================
+
+typedef struct {
+    SafeCString key;
+    SafeCString value;
+    char padding[12];
+} SourceMapItem <read=ReadSafeCString(this.key)>;
+
+typedef struct {
+    uint32 paddingSize;
+    uint32 padding[paddingSize];
+    uint32 itemCount;
+    SourceMapItem items[itemCount] <optimize=false>;
+} SourceMap;
+
+// ==============================================================================================================================
 // Main parse logic
 // ==============================================================================================================================
 
@@ -709,7 +736,7 @@ SetBackColor(COLOR_HEADER);
 
 char header[23];
 uint32 commandCount;
-uint32 unknown;
+uint32 sourceMapOffset;
 char header2[232];
 char svHeader[2];
 if (svHeader != "sv") {
@@ -731,8 +758,15 @@ if (ReadString(FTell(), 4) == "l33t") {
 }
 
 if (FTell() != commandOffset) {
-    Printf("Command offset not at offset %d: %d\n", commandOffset, FTell());
+    Printf("Commands not at offset %d: %d\n", commandOffset, FTell());
     Exit(1);
 }
 
 GameCommands gameCommands(commandCount, commandOffset);
+
+if (FTell() != sourceMapOffset) {
+    Printf("SourceMap not at offset %d: %d\n", sourceMapOffset, FTell());
+    Exit(1);
+}
+
+SourceMap sourceMap <bgcolor=COLOR_SOURCE_MAP>;

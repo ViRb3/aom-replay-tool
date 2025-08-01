@@ -73,12 +73,21 @@ func processReplay(inputPath, outputPath string, compress bool) error {
 		return err
 	}
 
-	svBytes := bytes.Index(rawData, []byte{0x73, 0x76})
+	smBytes := 27
+	sourceMapOff := int(binary.LittleEndian.Uint32(rawData[smBytes : smBytes+4]))
+
+	svBytes := 263
+	if string(rawData[svBytes:svBytes+2]) != "sv" {
+		return fmt.Errorf("sv bytes marker not match")
+	}
+
 	commandOff := int(binary.LittleEndian.Uint32(rawData[svBytes+2 : svBytes+6]))
 	unknownOff := int(binary.LittleEndian.Uint32(rawData[svBytes+6 : svBytes+10]))
 	if commandOff-unknownOff != 4 {
 		return err
 	}
+
+	sourceMapSize := sourceMapOff - commandOff
 
 	var payload []byte
 	if !compress {
@@ -90,14 +99,18 @@ func processReplay(inputPath, outputPath string, compress bool) error {
 		return err
 	}
 
-	repacked := rawData[:svBytes+2]
-
+	repacked := rawData[:smBytes]
 	buffer := make([]byte, 4)
 
-	binary.LittleEndian.PutUint32(buffer, uint32(len(repacked)+8+len(payload)))
+	binary.LittleEndian.PutUint32(buffer, uint32(svBytes+2+8+len(payload)+sourceMapSize))
 	repacked = append(repacked, buffer...)
 
-	binary.LittleEndian.PutUint32(buffer, uint32(len(repacked)+len(payload)))
+	repacked = append(repacked, rawData[smBytes+4:svBytes+2]...)
+
+	binary.LittleEndian.PutUint32(buffer, uint32(svBytes+2+8+len(payload)))
+	repacked = append(repacked, buffer...)
+
+	binary.LittleEndian.PutUint32(buffer, uint32(svBytes+2+4+len(payload)))
 	repacked = append(repacked, buffer...)
 
 	repacked = append(repacked, payload...)
