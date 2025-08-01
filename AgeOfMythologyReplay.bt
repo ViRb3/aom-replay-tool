@@ -308,7 +308,7 @@ typedef struct {
 // Game Commands
 // ==============================================================================================================================
 
-enum <uchar> GameCommandType {
+enum <uint32> GameCommandType {
     CMD_TASK = 0,
     CMD_RESEARCH = 1,
     CMD_TRAIN = 2,
@@ -366,33 +366,31 @@ typedef struct {
 typedef struct {
     uchar header;
     GameCommandType commandType;
-    uchar header2[8];
-        
-    if (commandType == 14) {
-        uchar extraHeader[20];
-    } else {
-        uchar extraHeader[8];
+
+    uchar unk;
+    if (unk == 0xFF) {
+        uchar extraPadding[12];
     }
-    
+
+    uint32 playerId;
+    uchar extraHeader[8];
+
     uint32 three;
     if (three != 3) {
         Printf("Expected 3 but got %d at offset %d\n", three, startof(three));
         Exit(1);
     }
     
-    local int playerId;
-    if (commandType == 19) {
-        uint32 padding;
-        playerId = header[7];
-    } else {
-        ushort one;
-        if (one != 1) {
-            Printf("Expected 1 but got %d at offset %d\n", one, startof(one));
+    uint32 hasPlayerId2;
+    if (hasPlayerId2 == 1) {
+        uint32 playerId2;
+        if (playerId != playerId2) {
+            Printf("Command playerIds don't match at offset %d\n", startof(playerId2));
             Exit(1);
         }
-        ushort padding1;
-        uint32 playerIdShort;
-        playerId = playerIdShort;
+    } else if (hasPlayerId2 != 0) {
+        Printf("hasPlayerId2 not 0 or 1 at offset %d\n", startof(one));
+        Exit(1);
     }
     
     uint32 padding3;
