@@ -550,7 +550,14 @@ typedef struct {
             uint32 data2;
             break;
         case CMD_UNKNOWN_78:
-            uchar unknown[20];
+            uchar unknown[8];
+            uint32 protoUnit;
+            uint32 unknown2;
+            if (unknown2 == 3) {
+                Vector3 location;
+            } else {
+                uint32 unknown3;
+            }
             break;
         default:
             assert(0, "GameCommand commandType", startof(commandType));
