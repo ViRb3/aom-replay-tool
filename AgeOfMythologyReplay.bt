@@ -317,6 +317,7 @@ enum <uint32> GameCommandType {
     CMD_BUILD_WALL_CONNECTOR = 69,
     CMD_SEEK_SHELTER = 71,
     CMD_PREQUEUE_TECH = 72,
+    CMD_UNKNOWN_73 = 73,
     CMD_PREBUY_GOD_POWER = 75,
     CMD_UNKNOWN_78 = 78
 };
@@ -544,6 +545,9 @@ typedef struct {
             uint32 techId;
             uchar data2;
             break;
+        case CMD_UNKNOWN_73:
+             uchar unknown[8];
+            break;
         case CMD_PREBUY_GOD_POWER:
             uint32 data[2];
             uint32 protoPower;
@@ -600,6 +604,7 @@ string ReadGameCommand(GameCommand &cmd) {
         case CMD_BUILD_WALL_CONNECTOR: cmdName = "Build Wall Connector"; break;
         case CMD_SEEK_SHELTER: cmdName = "Seek Shelter"; break;
         case CMD_PREQUEUE_TECH: cmdName = "Prequeue Tech"; break;
+        case CMD_UNKNOWN_73: cmdName = "Unknown 73"; break;
         case CMD_PREBUY_GOD_POWER: cmdName = "Prebuy God Power"; break;
         case CMD_UNKNOWN_78: cmdName = "Unknown 78"; break;
         default: assert(0, "ReadGameCommand commandType", startof(cmd.commandType));
