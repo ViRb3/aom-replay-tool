@@ -422,6 +422,7 @@ typedef struct {
         case CMD_STOP:
             uint32 data[2];
             break;
+        // this is both god power and unit ability
         case CMD_PROTO_POWER:
             uint32 data[3];
             Vector3 location1;
@@ -548,6 +549,7 @@ typedef struct {
         case CMD_UNKNOWN_73:
              uchar unknown[8];
             break;
+        // this is used by AI to "buy" the ability to use a god power
         case CMD_PREBUY_GOD_POWER:
             uint32 data[2];
             uint32 protoPower;
