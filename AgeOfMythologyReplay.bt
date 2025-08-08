@@ -268,7 +268,8 @@ typedef struct {
                     nodeMatch = FindFirst("[A-Za-z0-9]{2}", true, false, FINDMETHOD_REGEX, 0.0, 1, i, dataEnd-i);
                     if (nodeMatch == -1) {
                         i = dataEnd;
-                    } else if (nodeMatch + ReadUInt(nodeMatch+2) > dataEnd) {
+                    } else if ((nodeMatch + ReadUInt(nodeMatch+2) > dataEnd) ||
+                                (getNodePath(this) == "BG/GM/GD" && ReadString(nodeMatch, 2) == "uI")) {
                         i = nodeMatch + 1;
                     } else {
                         commitPadding(nodeMatch);
