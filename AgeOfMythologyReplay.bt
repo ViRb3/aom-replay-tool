@@ -547,7 +547,7 @@ typedef struct {
         case CMD_PREQUEUE_TECH:
             uint32 data[2];
             uint32 techId;
-            uchar data2;
+            uint32 data2;
             break;
         case CMD_UNKNOWN_73:
              uchar unknown[8];
