@@ -562,11 +562,7 @@ typedef struct {
             uchar unknown[8];
             uint32 protoUnit;
             uint32 unknown2;
-            if (unknown2 == 3) {
-                Vector3 location;
-            } else {
-                uint32 unknown3;
-            }
+            uint32 unknown3[unknown2];
             break;
         default:
             assert(0, "GameCommand commandType", startof(commandType));
